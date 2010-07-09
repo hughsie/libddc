@@ -1,0 +1,96 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+<!-- Process this file with docbook-to-man to generate an nroff manual
+     page: `docbook-to-man manpage.xml > manpage.1'.  You may view
+     the manual page with: `docbook-to-man manpage.xml | nroff -man |
+     less'.  A typical entry in a Makefile or Makefile.am is:
+
+manpage.1: manpage.xml
+	docbook-to-man $< > $@
+
+	The docbook-to-man binary is found in the docbook-to-man package.
+	Please remember that if you create the nroff version in one of the
+	debian/rules file targets (such as build), you will need to include
+	docbook-to-man in your Build-Depends control field.
+  -->
+
+  <!-- Please adjust the date whenever revising the manpage. -->
+  <!ENTITY date        "<date>31 July,2008</date>">
+  <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
+       allowed: see man(7), man(1). -->
+  <!ENTITY package     "libddc-util">
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <copyright>
+      <year>2010</year>
+      <holder>Richard Hughes</holder>
+    </copyright>
+    &date;
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>libddc-util</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+  <refnamediv>
+    <refname>&package;</refname>
+    <refpurpose>Utility</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&package;</command>
+      <arg><option>--help</option></arg>
+      <arg><option>--verbose</option></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  <refsect1>
+    <title>Description</title>
+    <para>
+      This manual page documents briefly the <command>&package;</command> command.
+    </para>
+    <para>
+      <command>&package;</command> is the command line client for libddc for interacting with the display.
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>Options</title>
+    <para>
+      This program follows the usual &gnu; command line syntax, with long options
+      starting with two dashes (`-').
+      A summary of options is included below.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>
+          <option>--help</option>
+        </term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>--verbose</option>
+        </term>
+        <listitem>
+          <para>Show extra debugging information.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>See Also</title>
+    <para><command>dbus-send</command> (1).</para>
+  </refsect1>
+  <refsect1>
+    <title>Author</title>
+    <para>
+      This manual page was written by Richard Hughes <email>richard@hughsie.com</email>.
+    </para>
+  </refsect1>
+</refentry>

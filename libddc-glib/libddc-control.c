@@ -237,28 +237,6 @@ out:
 }
 
 /**
- * libddc_control_read_raw:
- *
- * read register ctrl raw data of ddc/ci
- **/
-static gboolean
-libddc_control_read_raw (LibddcControl *control, guchar ctrl, guchar *data, gsize data_length, gsize *recieved_length, GError **error)
-{
-	guchar buf[2];
-
-	g_return_val_if_fail (LIBDDC_IS_CONTROL(control), FALSE);
-	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-	buf[0] = LIBDDC_VCP_REQUEST;
-	buf[1] = ctrl;
-
-	if (!libddc_device_write (control->priv->device, buf, sizeof(buf), error))
-		return FALSE;
-
-	return libddc_device_read (control->priv->device, data, data_length, recieved_length, error);
-}
-
-/**
  * libddc_control_read:
  **/
 gboolean
@@ -271,15 +249,49 @@ libddc_control_read (LibddcControl *control, guint16 *value, guint16 *maximum, G
 	g_return_val_if_fail (LIBDDC_IS_CONTROL(control), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
-	ret = libddc_control_read_raw (control, control->priv->id, buf, sizeof(buf), &len, error);
+	/* request data */
+	buf[0] = LIBDDC_VCP_REQUEST;
+	buf[1] = control->priv->id;
+	if (!libddc_device_write (control->priv->device, buf, 2, error))
+		goto out;
+
+	/* get data */
+	ret = libddc_device_read (control->priv->device, buf, 8, &len, error);
 	if (!ret)
 		goto out;
-	if (len != sizeof(buf) || buf[0] != LIBDDC_VCP_REPLY || buf[2] != control->priv->id) {
+
+	/* check we got enough data */
+	if (len != sizeof(buf)) {
 		g_set_error (error, LIBDDC_CONTROL_ERROR, LIBDDC_CONTROL_ERROR_FAILED,
-			     "Failed to parse control 0x%02x", control->priv->id);
+			     "Failed to parse control 0x%02x as incorrect length", control->priv->id);
 		ret = FALSE;
 		goto out;
 	}
+
+	/* message type incorrect */
+	if (buf[0] != LIBDDC_VCP_REPLY) {
+		g_set_error (error, LIBDDC_CONTROL_ERROR, LIBDDC_CONTROL_ERROR_FAILED,
+			     "Failed to parse control 0x%02x as incorrect command returned", control->priv->id);
+		ret = FALSE;
+		goto out;
+	}
+
+	/* ensure the control is supported by the display */
+	if (buf[1] != 0) {
+		g_set_error (error, LIBDDC_CONTROL_ERROR, LIBDDC_CONTROL_ERROR_FAILED,
+			     "Failed to parse control 0x%02x as unsupported", control->priv->id);
+		ret = FALSE;
+		goto out;
+	}
+
+	/* check we are getting the correct control */
+	if (buf[2] != control->priv->id) {
+		g_set_error (error, LIBDDC_CONTROL_ERROR, LIBDDC_CONTROL_ERROR_FAILED,
+			     "Failed to parse control 0x%02x as incorrect id returned", control->priv->id);
+		ret = FALSE;
+		goto out;
+	}
+
 	if (value != NULL)
 		*value = buf[6] * 256 + buf[7];
 	if (maximum != NULL)

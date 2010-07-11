@@ -125,7 +125,6 @@ LibddcControl	*libddc_device_get_control_by_id	(LibddcDevice	*device,
 							 GError		**error);
 void		 libddc_device_set_verbose		(LibddcDevice	*device,
 							 LibddcVerbose verbose);
-const gchar	*libddc_device_get_vcp_description	(guint		 id);
 
 G_END_DECLS
 

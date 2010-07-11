@@ -139,6 +139,7 @@ static const LibddcDescription vcp_descriptions[] = {
 	{ 0xb0,	"settings" },
 	{ 0xca,	"on-screen-display" },
 	{ 0xcc,	"samsung-on-screen-display-language" },
+	{ 0xc9,	"firmware-version" },
 	{ 0xd4,	"stereo-mode" },
 	{ 0xd6,	"dpms-control-(1---on/4---stby)" },
 	{ 0xdc,	"magicbright-(1---text/2---internet/3---entertain/4---custom)" },

@@ -108,6 +108,7 @@ gboolean	 libddc_control_reset			(LibddcControl	*control,
 							 GError		**error);
 guchar		 libddc_control_get_id			(LibddcControl	*control);
 const gchar	*libddc_control_get_description		(LibddcControl	*control);
+GArray		*libddc_control_get_values		(LibddcControl	*control);
 
 G_END_DECLS
 

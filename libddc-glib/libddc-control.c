@@ -28,6 +28,7 @@
 
 #include "config.h"
 
+#include <stdlib.h>
 #include <glib-object.h>
 
 #include <libddc-device.h>
@@ -48,6 +49,7 @@ struct _LibddcControlPrivate
 	gboolean		 supported;
 	LibddcDevice		*device;
 	LibddcVerbose		 verbose;
+	GArray			*values;
 };
 
 enum {
@@ -184,6 +186,31 @@ libddc_control_get_description (LibddcControl *control)
 }
 
 /**
+ * libddc_control_is_value_valid:
+ **/
+static gboolean
+libddc_control_is_value_valid (LibddcControl *control, guint16 value)
+{
+	guint i;
+	gboolean ret = TRUE;
+	GArray *array;
+
+	/* no data */
+	array = control->priv->values;
+	if (array->len == 0)
+		goto out;
+
+	/* see if it is present in the description */
+	for (i=0; i<array->len; i++) {
+		ret = (g_array_index (array, guint16, i) == value);
+		if (ret)
+			goto out;
+	}
+out:
+	return ret;
+}
+
+/**
  * libddc_control_write:
  *
  * write value to register ctrl of ddc/ci
@@ -191,11 +218,19 @@ libddc_control_get_description (LibddcControl *control)
 gboolean
 libddc_control_write (LibddcControl *control, guint16 value, GError **error)
 {
-	gboolean ret;
+	gboolean ret = FALSE;
 	guchar buf[4];
 
 	g_return_val_if_fail (LIBDDC_IS_CONTROL(control), FALSE);
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	/* check this value is allowed */
+	ret = libddc_control_is_value_valid (control, value);
+	if (!ret) {
+		g_set_error (error, LIBDDC_CONTROL_ERROR, LIBDDC_CONTROL_ERROR_FAILED,
+			     "%i is not an allowed value for 0x%02x", value, control->priv->id);
+		goto out;
+	}
 
 	buf[0] = LIBDDC_VCP_SET;
 	buf[1] = control->priv->id;
@@ -322,10 +357,29 @@ libddc_control_run (LibddcControl *control, GError **error)
 void
 libddc_control_parse (LibddcControl *control, guchar id, const gchar *values)
 {
+	guint i;
+	guchar value;
+	gchar **split = NULL;
+
 	g_return_if_fail (LIBDDC_IS_CONTROL(control));
 
+	/* just save this */
 	control->priv->id = id;
-	// FIXME: use the values
+	g_debug ("add control 0x%02x (%s)", id, libddc_control_get_description (control));
+
+	/* do we have any values to parse */
+	if (values == NULL)
+		goto out;
+
+	/* tokenize */
+	split = g_strsplit (values, " ", -1);
+	for (i=0; split[i] != NULL; i++) {
+		value = atoi (split[i]);
+		g_debug ("add value %i to control 0x%02x", id, value);
+		g_array_append_val (control->priv->values, value);
+	}
+out:
+	g_strfreev (split);
 }
 
 /**
@@ -348,6 +402,19 @@ libddc_control_get_id (LibddcControl *control)
 	g_return_val_if_fail (LIBDDC_IS_CONTROL(control), 0);
 
 	return control->priv->id;
+}
+
+/**
+ * libddc_control_get_values:
+ *
+ * Return value: an array of guint16
+ **/
+GArray *
+libddc_control_get_values (LibddcControl *control)
+{
+	g_return_val_if_fail (LIBDDC_IS_CONTROL(control), NULL);
+
+	return g_array_ref (control->priv->values);
 }
 
 /**
@@ -441,6 +508,7 @@ libddc_control_init (LibddcControl *control)
 {
 	control->priv = LIBDDC_CONTROL_GET_PRIVATE (control);
 	control->priv->id = 0xff;
+	control->priv->values = g_array_new (FALSE, FALSE, sizeof(guint16));
 }
 
 /**
@@ -454,10 +522,9 @@ libddc_control_finalize (GObject *object)
 
 	g_return_if_fail (LIBDDC_IS_CONTROL(control));
 
+	g_array_free (priv->values, TRUE);
 	if (priv->device != NULL)
 		g_object_unref (priv->device);
-
-//	g_ptr_array_free (priv->caps, TRUE);
 
 	G_OBJECT_CLASS (libddc_control_parent_class)->finalize (object);
 }

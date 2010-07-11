@@ -30,11 +30,12 @@
 static void
 show_device_cb (LibddcDevice *device, gpointer user_data)
 {
-	guint i;
+	guint i, j;
 	gboolean ret;
 	guint16 value, max;
 	GPtrArray *array;
 	LibddcControl *control;
+	GArray *values;
 	GError *error = NULL;
 	const gchar *desc;
 
@@ -73,9 +74,17 @@ show_device_cb (LibddcDevice *device, gpointer user_data)
 
 		desc = libddc_control_get_description (control);
 		g_print ("0x%02x\t[%s]", libddc_control_get_id (control), desc != NULL ? desc : "unknown");
-//		if (caps_str != NULL)
-//			g_print ("\tcaps: %s", caps_str);
-		g_print ("\n");
+
+		/* print allowed values */
+		values = libddc_control_get_values (control);
+		if (values->len > 0) {
+			g_print ("\tValues:\n");
+			for (j=0; j<values->len; j++) {
+				g_print ("\tvalues: %i", g_array_index (values, guint16, j));
+			}
+			g_print ("\n");
+		}
+		g_array_unref (values);
 	}
 	g_ptr_array_unref (array);
 

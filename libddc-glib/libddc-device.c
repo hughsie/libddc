@@ -536,7 +536,7 @@ libddc_device_parse_caps (LibddcDevice *device, const gchar *caps)
 static gboolean
 libddc_device_ensure_controls (LibddcDevice *device, GError **error)
 {
-	guchar buf[64];	/* 64 bytes chunk (was 35, but 173P+ send 43 bytes chunks) */
+	guchar buf[64];
 	gint offset = 0;
 	gsize len;
 	gint retries = 5;
@@ -560,18 +560,24 @@ libddc_device_ensure_controls (LibddcDevice *device, GError **error)
 			goto out;
 		}
 
+		/* try to read */
 		ret = libddc_device_raw_caps (device, offset, buf, sizeof(buf), &len, NULL);
 		if (!ret || len < 0) {
-			g_warning ("Failed to read offset %i.", offset);
+			if (device->priv->verbose == LIBDDC_VERBOSE_PROTOCOL)
+				g_warning ("Failed to read offset %i.", offset);
 			retries--;
 			continue;
 		}
 
+		/* check response */
 		if (len < 3 || buf[0] != LIBDDC_CAPABILITIES_REPLY || (buf[1] * 256 + buf[2]) != offset) {
-			g_warning ("Invalid sequence in caps.");
+			if (device->priv->verbose == LIBDDC_VERBOSE_PROTOCOL)
+				g_warning ("Invalid sequence in caps.");
 			retries--;
 			continue;
 		}
+
+		/* add to results */
 		g_string_append_len (string, (const gchar *) buf + 3, len - 3);
 		offset += len - 3;
 		retries = 3;
@@ -635,7 +641,7 @@ libddc_device_startup (LibddcDevice *device, GError **error)
 		control = libddc_device_get_control_by_id (device, LIBDDC_ENABLE_APPLICATION_REPORT, error);
 		if (control == NULL)
 			goto out;
-		ret = libddc_control_write (control, LIBDDC_CTRL_ENABLE, error);
+		ret = libddc_control_set (control, LIBDDC_CTRL_ENABLE, error);
 	} else {
 		/* this is not fatal if it's not found */
 		control = libddc_device_get_control_by_id (device, LIBDDC_COMMAND_PRESENCE, NULL);
@@ -665,7 +671,7 @@ libddc_device_close (LibddcDevice *device, GError **error)
 		control = libddc_device_get_control_by_id (device, LIBDDC_ENABLE_APPLICATION_REPORT, error);
 		if (control == NULL)
 			goto out;
-		ret = libddc_control_write (control, LIBDDC_CTRL_DISABLE, error);
+		ret = libddc_control_set (control, LIBDDC_CTRL_DISABLE, error);
 	} else {
 		ret = TRUE;
 	}

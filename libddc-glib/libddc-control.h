@@ -97,11 +97,11 @@ void		 libddc_control_set_verbose		(LibddcControl	*control,
 							 LibddcVerbose verbose);
 gboolean	 libddc_control_run			(LibddcControl	*control,
 							 GError		**error);
-gboolean	 libddc_control_read			(LibddcControl	*control,
+gboolean	 libddc_control_request			(LibddcControl	*control,
 							 guint16	*value,
 							 guint16	*maximum,
 							 GError		**error);
-gboolean	 libddc_control_write			(LibddcControl	*control,
+gboolean	 libddc_control_set			(LibddcControl	*control,
 							 guint16	 value,
 							 GError		**error);
 gboolean	 libddc_control_reset			(LibddcControl	*control,

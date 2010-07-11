@@ -211,12 +211,12 @@ out:
 }
 
 /**
- * libddc_control_write:
+ * libddc_control_set:
  *
  * write value to register ctrl of ddc/ci
  **/
 gboolean
-libddc_control_write (LibddcControl *control, guint16 value, GError **error)
+libddc_control_set (LibddcControl *control, guint16 value, GError **error)
 {
 	gboolean ret = FALSE;
 	guchar buf[4];
@@ -273,10 +273,10 @@ out:
 }
 
 /**
- * libddc_control_read:
+ * libddc_control_request:
  **/
 gboolean
-libddc_control_read (LibddcControl *control, guint16 *value, guint16 *maximum, GError **error)
+libddc_control_request (LibddcControl *control, guint16 *value, guint16 *maximum, GError **error)
 {
 	gboolean ret = FALSE;
 	guchar buf[8];

@@ -95,7 +95,7 @@ show_device_cb (LibddcDevice *device, gpointer user_data)
 		goto out;
 	}
 
-	ret = libddc_control_read (control, &value, &max, &error);
+	ret = libddc_control_request (control, &value, &max, &error);
 	if (!ret) {
 		g_warning ("failed to read: %s", error->message);
 		g_error_free (error);
@@ -103,13 +103,13 @@ show_device_cb (LibddcDevice *device, gpointer user_data)
 	}
 	g_debug  ("brightness=%i, max=%i", value, max);
 
-	ret = libddc_control_write (control, 0, &error);
+	ret = libddc_control_set (control, 0, &error);
 	if (!ret) {
 		g_warning ("failed to write: %s", error->message);
 		g_error_free (error);
 		goto out;
 	}
-	ret = libddc_control_write (control, value, &error);
+	ret = libddc_control_set (control, value, &error);
 	if (!ret) {
 		g_warning ("failed to write: %s", error->message);
 		g_error_free (error);
@@ -127,14 +127,28 @@ int
 main (int argc, char **argv)
 {
 	gboolean ret;
+	LibddcVerbose verbose;
 	LibddcClient *client;
+	GOptionContext *context;
 	GError *error = NULL;
 	GPtrArray *array;
 
+	const GOptionEntry options[] = {
+		{ "verbose", '\0', 0, G_OPTION_ARG_INT, &verbose,
+		  "Enable verbose debugging mode", NULL},
+		{ NULL}
+	};
+
 	g_type_init ();
 
+	context = g_option_context_new ("DDC/CI utility program");
+	g_option_context_set_summary (context, "This exposes the DDC/CI protocol used by most modern displays.");
+	g_option_context_add_main_entries (context, options, NULL);
+	g_option_context_parse (context, &argc, &argv, NULL);
+	g_option_context_free (context);
+
 	client = libddc_client_new ();
-	libddc_client_set_verbose (client, LIBDDC_VERBOSE_OVERVIEW);
+	libddc_client_set_verbose (client, verbose);
 
 	array = libddc_client_get_devices (client, &error);
 	if (array == NULL) {

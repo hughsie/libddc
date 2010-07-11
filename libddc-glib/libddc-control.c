@@ -61,6 +61,7 @@ G_DEFINE_TYPE (LibddcControl, libddc_control, G_TYPE_OBJECT)
 #define LIBDDC_VCP_REQUEST		0x01
 #define LIBDDC_VCP_REPLY		0x02
 #define LIBDDC_VCP_SET			0x03
+#define LIBDDC_VCP_RESET		0x09
 #define LIBDDC_VCP_SET_DELAY_USECS   	50000
 
 typedef struct {
@@ -187,7 +188,7 @@ libddc_control_get_description (LibddcControl *control)
  * write value to register ctrl of ddc/ci
  **/
 gboolean
-libddc_control_write (LibddcControl *control, guint value, GError **error)
+libddc_control_write (LibddcControl *control, guint16 value, GError **error)
 {
 	gboolean ret;
 	guchar buf[4];
@@ -199,6 +200,31 @@ libddc_control_write (LibddcControl *control, guint value, GError **error)
 	buf[1] = control->priv->id;
 	buf[2] = (value >> 8);
 	buf[3] = (value & 255);
+
+	ret = libddc_device_write (control->priv->device, buf, sizeof(buf), error);
+	if (!ret)
+		goto out;
+
+	/* Do the delay */
+	g_usleep (LIBDDC_VCP_SET_DELAY_USECS);
+out:
+	return ret;
+}
+
+/**
+ * libddc_control_reset:
+ **/
+gboolean
+libddc_control_reset (LibddcControl *control, GError **error)
+{
+	gboolean ret;
+	guchar buf[2];
+
+	g_return_val_if_fail (LIBDDC_IS_CONTROL(control), FALSE);
+	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+	buf[0] = LIBDDC_VCP_RESET;
+	buf[1] = control->priv->id;
 
 	ret = libddc_device_write (control->priv->device, buf, sizeof(buf), error);
 	if (!ret)
@@ -236,7 +262,7 @@ libddc_control_read_raw (LibddcControl *control, guchar ctrl, guchar *data, gsiz
  * libddc_control_read:
  **/
 gboolean
-libddc_control_read (LibddcControl *control, guint *value, guint *maximum, GError **error)
+libddc_control_read (LibddcControl *control, guint16 *value, guint16 *maximum, GError **error)
 {
 	gboolean ret = FALSE;
 	guchar buf[8];

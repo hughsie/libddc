@@ -32,7 +32,7 @@ show_device_cb (LibddcDevice *device, gpointer user_data)
 {
 	guint i;
 	gboolean ret;
-	guint value, max;
+	guint16 value, max;
 	GPtrArray *array;
 	LibddcControl *control;
 	GError *error = NULL;

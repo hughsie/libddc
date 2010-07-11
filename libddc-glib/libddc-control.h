@@ -98,11 +98,13 @@ void		 libddc_control_set_verbose		(LibddcControl	*control,
 gboolean	 libddc_control_run			(LibddcControl	*control,
 							 GError		**error);
 gboolean	 libddc_control_read			(LibddcControl	*control,
-							 guint		*value,
-							 guint		*maximum,
+							 guint16	*value,
+							 guint16	*maximum,
 							 GError		**error);
 gboolean	 libddc_control_write			(LibddcControl	*control,
-							 guint		 value,
+							 guint16	 value,
+							 GError		**error);
+gboolean	 libddc_control_reset			(LibddcControl	*control,
 							 GError		**error);
 guchar		 libddc_control_get_id			(LibddcControl	*control);
 const gchar	*libddc_control_get_description		(LibddcControl	*control);

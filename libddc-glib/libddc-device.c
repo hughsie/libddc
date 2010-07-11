@@ -418,12 +418,12 @@ out:
 }
 
 /**
- * libddc_device_raw_caps:
+ * libddc_device_capabilities_request:
  *
  * read capabilities raw data of ddc/ci
  **/
 static gint
-libddc_device_raw_caps (LibddcDevice *device, guint offset, guchar *data, gsize data_length, gsize *recieved_length, GError **error)
+libddc_device_capabilities_request (LibddcDevice *device, guint offset, guchar *data, gsize data_length, gsize *recieved_length, GError **error)
 {
 	guchar buf[3];
 
@@ -554,25 +554,41 @@ libddc_device_ensure_controls (LibddcDevice *device, GError **error)
 	string = g_string_new ("");
 	do {
 		/* we're shit out of luck, Brian */
-		if (retries == 0) {
-			g_set_error (error, LIBDDC_DEVICE_ERROR, LIBDDC_DEVICE_ERROR_FAILED,
-			     "failed to read controls after 5 retries");
+		if (retries == 0)
 			goto out;
-		}
+
+		/* clear previous error */
+		g_clear_error (error);
 
 		/* try to read */
-		ret = libddc_device_raw_caps (device, offset, buf, sizeof(buf), &len, NULL);
-		if (!ret || len < 0) {
+		ret = libddc_device_capabilities_request (device, offset, buf, sizeof(buf), &len, error);
+		if (!ret) {
 			if (device->priv->verbose == LIBDDC_VERBOSE_PROTOCOL)
-				g_warning ("Failed to read offset %i.", offset);
+				g_warning ("Failed to read offset 0x%02x.", offset);
+			retries--;
+			continue;
+		}
+
+		/* not enough data */
+		if (len < 3) {
+			if (device->priv->verbose == LIBDDC_VERBOSE_PROTOCOL)
+				g_warning ("Not enough data at offset 0x%02x.", offset);
 			retries--;
 			continue;
 		}
 
 		/* check response */
-		if (len < 3 || buf[0] != LIBDDC_CAPABILITIES_REPLY || (buf[1] * 256 + buf[2]) != offset) {
+		if (buf[0] != LIBDDC_CAPABILITIES_REPLY) {
 			if (device->priv->verbose == LIBDDC_VERBOSE_PROTOCOL)
-				g_warning ("Invalid sequence in caps.");
+				g_warning ("Not correct reply at offset 0x%02x.", offset);
+			retries--;
+			continue;
+		}
+
+		/* check offset */
+		if ((buf[1] * 256 + buf[2]) != offset) {
+			if (device->priv->verbose == LIBDDC_VERBOSE_PROTOCOL)
+				g_warning ("Not correct offset at offset 0x%02x.", offset);
 			retries--;
 			continue;
 		}

@@ -83,7 +83,6 @@ struct _LibddcDevicePrivate
 {
 	gint			 fd;
 	guint			 addr;
-	gchar			*raw_caps;
 	LibddcDeviceKind	 kind;
 	gchar			*model;
 	gchar			*pnpid;
@@ -503,10 +502,10 @@ libddc_device_set_device_property (LibddcDevice *device, const gchar *key, const
  * libddc_device_parse_caps:
  **/
 static gboolean
-libddc_device_parse_caps (LibddcDevice *device)
+libddc_device_parse_caps (LibddcDevice *device, const gchar *caps)
 {
 	guint i;
-	gchar *tmp = g_strdup (device->priv->raw_caps);
+	gchar *tmp = g_strdup (caps);
 	gchar *key = tmp+1;
 	gchar *value = NULL;
 	guint refcount = 0;
@@ -578,11 +577,11 @@ libddc_device_ensure_controls (LibddcDevice *device, GError **error)
 		retries = 3;
 	} while (len != 3);
 
-	/* FIXME: do we need this? */
-	device->priv->raw_caps = g_strdup (string->str);
+	if (device->priv->verbose == LIBDDC_VERBOSE_OVERVIEW)
+		g_debug ("raw caps: %s", string->str);
 
 	/* parse */
-	ret = libddc_device_parse_caps (device);
+	ret = libddc_device_parse_caps (device, string->str);
 	if (!ret) {
 		g_set_error (error, LIBDDC_DEVICE_ERROR, LIBDDC_DEVICE_ERROR_FAILED,
 			     "failed to parse caps");
@@ -1003,7 +1002,6 @@ libddc_device_finalize (GObject *object)
 	g_return_if_fail (LIBDDC_IS_DEVICE(device));
 	if (priv->fd > 0)
 		close (priv->fd);
-	g_free (priv->raw_caps);
 	g_free (priv->model);
 	g_free (priv->pnpid);
 	g_free (priv->edid_data);

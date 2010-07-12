@@ -358,14 +358,15 @@ void
 libddc_control_parse (LibddcControl *control, guchar id, const gchar *values)
 {
 	guint i;
-	guchar value;
+	guint16 value;
 	gchar **split = NULL;
 
 	g_return_if_fail (LIBDDC_IS_CONTROL(control));
 
 	/* just save this */
 	control->priv->id = id;
-	g_debug ("add control 0x%02x (%s)", id, libddc_control_get_description (control));
+	if (control->priv->verbose == LIBDDC_VERBOSE_OVERVIEW)
+		g_debug ("add control 0x%02x (%s)", id, libddc_control_get_description (control));
 
 	/* do we have any values to parse */
 	if (values == NULL)
@@ -375,7 +376,8 @@ libddc_control_parse (LibddcControl *control, guchar id, const gchar *values)
 	split = g_strsplit (values, " ", -1);
 	for (i=0; split[i] != NULL; i++) {
 		value = atoi (split[i]);
-		g_debug ("add value %i to control 0x%02x", id, value);
+		if (control->priv->verbose == LIBDDC_VERBOSE_OVERVIEW)
+			g_debug ("add value %i to control 0x%02x", value, id);
 		g_array_append_val (control->priv->values, value);
 	}
 out:

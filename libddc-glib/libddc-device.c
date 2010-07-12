@@ -448,6 +448,7 @@ libddc_device_add_control (LibddcDevice *device, const gchar *index_str, const g
 {
 	LibddcControl *control;
 	control = libddc_control_new ();
+	libddc_control_set_verbose (control, device->priv->verbose);
 	libddc_control_set_device (control, device);
 	libddc_control_parse (control, strtoul (index_str, NULL, 16), controls_str);
 	g_ptr_array_add (device->priv->controls, control);
@@ -564,7 +565,7 @@ libddc_device_ensure_controls (LibddcDevice *device, GError **error)
 		ret = libddc_device_capabilities_request (device, offset, buf, sizeof(buf), &len, error);
 		if (!ret) {
 			if (device->priv->verbose == LIBDDC_VERBOSE_PROTOCOL)
-				g_warning ("Failed to read offset 0x%02x.", offset);
+				g_warning ("Failed to read capabilities offset 0x%02x.", offset);
 			retries--;
 			continue;
 		}
@@ -572,7 +573,7 @@ libddc_device_ensure_controls (LibddcDevice *device, GError **error)
 		/* not enough data */
 		if (len < 3) {
 			if (device->priv->verbose == LIBDDC_VERBOSE_PROTOCOL)
-				g_warning ("Not enough data at offset 0x%02x.", offset);
+				g_warning ("Not enough capabilities data at offset 0x%02x.", offset);
 			retries--;
 			continue;
 		}
@@ -580,7 +581,7 @@ libddc_device_ensure_controls (LibddcDevice *device, GError **error)
 		/* check response */
 		if (buf[0] != LIBDDC_CAPABILITIES_REPLY) {
 			if (device->priv->verbose == LIBDDC_VERBOSE_PROTOCOL)
-				g_warning ("Not correct reply at offset 0x%02x.", offset);
+				g_warning ("Not correct capabilities reply at offset 0x%02x.", offset);
 			retries--;
 			continue;
 		}
@@ -588,7 +589,7 @@ libddc_device_ensure_controls (LibddcDevice *device, GError **error)
 		/* check offset */
 		if ((buf[1] * 256 + buf[2]) != offset) {
 			if (device->priv->verbose == LIBDDC_VERBOSE_PROTOCOL)
-				g_warning ("Not correct offset at offset 0x%02x.", offset);
+				g_warning ("Not correct capabilities offset at offset 0x%02x.", offset);
 			retries--;
 			continue;
 		}
@@ -718,6 +719,7 @@ libddc_device_open (LibddcDevice *device, const gchar *filename, GError **error)
 	/* open file */
 	device->priv->fd = open (filename, O_RDWR);
 	if (device->priv->fd < 0) {
+		ret = FALSE;
 		g_set_error (error, LIBDDC_DEVICE_ERROR, LIBDDC_DEVICE_ERROR_FAILED,
 			     "failed to open: %i", device->priv->fd);
 		goto out;

@@ -78,12 +78,13 @@ show_device_cb (LibddcDevice *device, gpointer user_data)
 		/* print allowed values */
 		values = libddc_control_get_values (control);
 		if (values->len > 0) {
-			g_print ("\tValues:\n");
+			g_print ("\t ( ");
 			for (j=0; j<values->len; j++) {
-				g_print ("\tvalues: %i", g_array_index (values, guint16, j));
+				g_print ("%i ", g_array_index (values, guint16, j));
 			}
-			g_print ("\n");
+			g_print (")");
 		}
+		g_print ("\n");
 		g_array_unref (values);
 	}
 	g_ptr_array_unref (array);

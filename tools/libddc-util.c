@@ -25,14 +25,32 @@
 #include <libddc.h>
 
 /**
- * show_device_cb:
+ * show_device_md5_cb:
  **/
 static void
-show_device_cb (LibddcDevice *device, gpointer user_data)
+show_device_md5_cb (LibddcDevice *device, gpointer user_data)
+{
+	GError *error = NULL;
+	const gchar *desc;
+
+	desc = libddc_device_get_edid_md5 (device, &error);
+	if (desc == NULL) {
+		g_warning ("failed to get EDID: %s", error->message);
+		g_error_free (error);
+		goto out;
+	}
+	g_print ("EDID: \t%s\n", desc);
+out:
+	return;
+}
+
+/**
+ * show_device:
+ **/
+static void
+show_device (LibddcDevice *device)
 {
 	guint i, j;
-	gboolean ret;
-	guint16 value, max;
 	GPtrArray *array;
 	LibddcControl *control;
 	GArray *values;
@@ -88,37 +106,17 @@ show_device_cb (LibddcDevice *device, gpointer user_data)
 		g_array_unref (values);
 	}
 	g_ptr_array_unref (array);
-
-	control = libddc_device_get_control_by_id (device, LIBDDC_CONTROL_ID_BRIGHTNESS, &error);
-	if (control == NULL) {
-		g_warning ("failed to get brightness cap: %s", error->message);
-		g_error_free (error);
-		goto out;
-	}
-
-	ret = libddc_control_request (control, &value, &max, &error);
-	if (!ret) {
-		g_warning ("failed to read: %s", error->message);
-		g_error_free (error);
-		goto out;
-	}
-	g_debug  ("brightness=%i, max=%i", value, max);
-
-	ret = libddc_control_set (control, 0, &error);
-	if (!ret) {
-		g_warning ("failed to write: %s", error->message);
-		g_error_free (error);
-		goto out;
-	}
-	ret = libddc_control_set (control, value, &error);
-	if (!ret) {
-		g_warning ("failed to write: %s", error->message);
-		g_error_free (error);
-		goto out;
-	}
-	g_object_unref (control);
 out:
 	return;
+}
+
+/**
+ * show_device_cb:
+ **/
+static void
+show_device_cb (LibddcDevice *device, gpointer user_data)
+{
+	show_device (device);
 }
 
 /**
@@ -128,15 +126,41 @@ int
 main (int argc, char **argv)
 {
 	gboolean ret;
-	LibddcVerbose verbose;
+	LibddcVerbose verbose = LIBDDC_VERBOSE_NONE;
+	gboolean enumerate = FALSE;
+	gboolean caps = FALSE;
+	gchar *display_md5 = NULL;
+	gchar *control_name = NULL;
+	gboolean control_get = FALSE;
+	gint control_set = -1;
 	LibddcClient *client;
+	LibddcDevice *device = NULL;
+	LibddcControl *control = NULL;
+	gint brightness = -1;
 	GOptionContext *context;
 	GError *error = NULL;
 	GPtrArray *array;
+	guint16 value, max;
+	guchar idx;
+	guint i;
 
 	const GOptionEntry options[] = {
 		{ "verbose", '\0', 0, G_OPTION_ARG_INT, &verbose,
 		  "Enable verbose debugging mode", NULL},
+		{ "enumerate", '\0', 0, G_OPTION_ARG_NONE, &enumerate,
+		  "Enumerate all displays and display capabilities", NULL},
+		{ "display", '\0', 0, G_OPTION_ARG_STRING, &display_md5,
+		  "Set the display MD5 to operate on", NULL},
+		{ "caps", '\0', 0, G_OPTION_ARG_NONE, &caps,
+		  "Print the capabilities of the selected display", NULL},
+		{ "brightness", '\0', 0, G_OPTION_ARG_INT, &brightness,
+		  "Set the display brightness", NULL},
+		{ "control", '\0', 0, G_OPTION_ARG_STRING, &control_name,
+		  "Use a control value, e.g. 'select-color-preset'", NULL},
+		{ "get", '\0', 0, G_OPTION_ARG_NONE, &control_get,
+		  "Get a control value", NULL},
+		{ "set", '\0', 0, G_OPTION_ARG_INT, &control_set,
+		  "Set a control value", NULL},
 		{ NULL}
 	};
 
@@ -151,24 +175,136 @@ main (int argc, char **argv)
 	client = libddc_client_new ();
 	libddc_client_set_verbose (client, verbose);
 
-	array = libddc_client_get_devices (client, &error);
-	if (array == NULL) {
-		g_warning ("failed to get device list: %s", error->message);
-		g_error_free (error);
+	/* we want to enumerate all devices */
+	if (enumerate) {
+		array = libddc_client_get_devices (client, &error);
+		if (array == NULL) {
+			g_warning ("failed to get device list: %s", error->message);
+			goto out;
+		}
+
+		/* show device details */
+		g_ptr_array_foreach (array, (GFunc) show_device_cb, NULL);
+		g_ptr_array_unref (array);
 		goto out;
 	}
 
-	/* show device details */
-	g_ptr_array_foreach (array, (GFunc) show_device_cb, NULL);
-	g_ptr_array_unref (array);
+	if (display_md5 == NULL) {
+		array = libddc_client_get_devices (client, &error);
+		if (array == NULL) {
+			g_warning ("failed to get device list: %s", error->message);
+			goto out;
+		}
 
+		/* show device details */
+		g_print ("No --display specified, please select from:\n");
+		g_ptr_array_foreach (array, (GFunc) show_device_md5_cb, NULL);
+		g_ptr_array_unref (array);
+		goto out;
+	}
+
+	/* get the correct device */
+	device = libddc_client_get_device_from_edid (client, display_md5, &error);
+	if (device == NULL) {
+		g_warning ("failed to get device list: %s", error->message);
+		goto out;
+	}
+
+	/* get caps? */
+	if (caps) {
+		show_device (device);
+		goto out;
+	}
+
+	/* set brightness? */
+	if (brightness != -1) {
+		control = libddc_device_get_control_by_id (device, LIBDDC_CONTROL_ID_BRIGHTNESS, &error);
+		if (control == NULL) {
+			g_warning ("Failed to get brightness control: %s", error->message);
+			goto out;
+		}
+
+		/* get old value */
+		ret = libddc_control_request (control, &value, &max, &error);
+		if (!ret) {
+			g_warning ("failed to read: %s", error->message);
+			goto out;
+		}
+
+		/* set new value */
+		ret = libddc_control_set (control, brightness, &error);
+		if (!ret) {
+			g_warning ("failed to write: %s", error->message);
+			goto out;
+		}
+
+		/* print what we did */
+		g_print  ("brightness before was %i%%, now is %i%% max is %i%%\n", value, brightness, max);
+		g_object_unref (control);
+		goto out;
+	}
+
+	/* get named control */
+	if (control_name == NULL) {
+		g_print ("you need to specify a control name with --control\n");
+		show_device (device);
+	}
+	idx = libddc_get_vcp_index_from_description (control_name);
+	if (idx == LIBDDC_VCP_ID_INVALID) {
+		const gchar *description;
+		g_warning ("Failed to match description, choose from:");
+		for (i=0; i<0xff; i++) {
+			description = libddc_get_vcp_description_from_index (i);
+			if (description != NULL)
+				g_print ("* %s\n", description);
+		}
+		goto out;
+	}
+
+	/* get control */
+	control = libddc_device_get_control_by_id (device, idx, &error);
+	if (control == NULL) {
+		g_warning ("Failed to get control: %s", error->message);
+		goto out;
+	}
+
+	/* get named control */
+	if (control_get) {
+		/* get old value */
+		ret = libddc_control_request (control, &value, &max, &error);
+		if (!ret) {
+			g_warning ("failed to read: %s", error->message);
+			goto out;
+		}
+
+		/* print what we got */
+		g_print  ("%s is %i, max is %i\n", control_name, value, max);
+	}
+
+	/* set named control */
+	if (control_set != -1) {
+
+		/* set new value */
+		ret = libddc_control_set (control, control_set, &error);
+		if (!ret) {
+			g_warning ("failed to write: %s", error->message);
+			goto out;
+		}
+	}
+out:
+	g_clear_error (&error);
 	ret = libddc_client_close (client, &error);
 	if (!ret) {
 		g_warning ("failed to close: %s", error->message);
 		g_error_free (error);
 		goto out;
 	}
+	if (device != NULL)
+		g_object_unref (device);
+	if (control != NULL)
+		g_object_unref (control);
 	g_object_unref (client);
-out:
+	g_free (display_md5);
+	g_free (control_name);
 	return 0;
 }

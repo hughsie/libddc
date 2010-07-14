@@ -34,6 +34,25 @@ typedef enum {
 	LIBDDC_VERBOSE_PROTOCOL
 } LibddcVerbose;
 
+#define LIBDDC_VCP_REQUEST			0x01
+#define LIBDDC_VCP_REPLY			0x02
+#define LIBDDC_VCP_SET				0x03
+#define LIBDDC_VCP_RESET			0x09
+#define LIBDDC_DEFAULT_DDCCI_ADDR		0x37
+#define LIBDDC_DEFAULT_EDID_ADDR		0x50
+#define LIBDDC_CAPABILITIES_REQUEST		0xf3
+#define LIBDDC_CAPABILITIES_REPLY		0xe3
+#define LIBDDC_COMMAND_PRESENCE			0xf7
+#define LIBDDC_ENABLE_APPLICATION_REPORT	0xf5
+
+#define	LIBDDC_VCP_ID_INVALID			0x00
+
+#define LIBDDC_CTRL_DISABLE			0x0000
+#define LIBDDC_CTRL_ENABLE			0x0001
+
+const gchar	*libddc_get_vcp_description_from_index	(guchar		 idx);
+guchar		 libddc_get_vcp_index_from_description	(const gchar	*description);
+
 #undef __LIBDDC_COMMON_H_INSIDE__
 
 #endif /* __LIBDDC_COMMON_H__ */

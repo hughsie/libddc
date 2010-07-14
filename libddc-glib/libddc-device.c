@@ -48,19 +48,6 @@ static void     libddc_device_finalize	(GObject     *object);
 
 #define LIBDDC_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), LIBDDC_TYPE_DEVICE, LibddcDevicePrivate))
 
-/* ddc/ci defines */
-#define LIBDDC_DEFAULT_DDCCI_ADDR		0x37
-#define LIBDDC_DEFAULT_EDID_ADDR		0x50
-
-#define LIBDDC_CAPABILITIES_REQUEST		0xf3
-#define LIBDDC_CAPABILITIES_REPLY		0xe3
-#define LIBDDC_COMMAND_PRESENCE			0xf7	/* ACCESS.bus presence check */
-
-/* samsung specific, magictune starts with writing 1 to this register */
-#define LIBDDC_ENABLE_APPLICATION_REPORT	0xf5
-#define LIBDDC_CTRL_DISABLE			0x0000
-#define LIBDDC_CTRL_ENABLE			0x0001
-
 /* ddc/ci iface tunables */
 #define LIBDDC_MAX_MESSAGE_BYTES		127
 #define LIBDDC_READ_DELAY_SECS   		0.04f

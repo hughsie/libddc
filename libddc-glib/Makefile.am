@@ -44,6 +44,7 @@ libddc_glib_la_SOURCES =					\
 	libddc-control.c					\
 	libddc-control.h					\
 	libddc-version.h					\
+	libddc-common.c						\
 	libddc-common.h						\
 	$(NULL)
 

@@ -60,112 +60,7 @@ enum {
 
 G_DEFINE_TYPE (LibddcControl, libddc_control, G_TYPE_OBJECT)
 
-#define LIBDDC_VCP_REQUEST		0x01
-#define LIBDDC_VCP_REPLY		0x02
-#define LIBDDC_VCP_SET			0x03
-#define LIBDDC_VCP_RESET		0x09
-#define LIBDDC_VCP_SET_DELAY_USECS   	50000
-
-typedef struct {
-	guchar		 index;
-	const gchar	*shortname;
-} LibddcDescription;
-
-static const LibddcDescription vcp_descriptions[] = {
-	{ 0x00, "degauss" },
-	{ 0x01,	"degauss" },
-	{ 0x02,	"secondary-degauss" },
-	{ 0x04,	"reset-factory-defaults" },
-	{ 0x05,	"reset-brightness-and-contrast" },
-	{ 0x06,	"reset-factory-geometry" },
-	{ 0x08,	"reset-factory-default-color" },
-	{ 0x0a,	"reset-factory-default-position" },
-	{ 0x0c,	"reset-factory-default-size" },
-	{ 0x0e, "image-lock-coarse" },
-	{ 0x10, "brightness" },
-	{ 0x12, "contrast" },
-	{ 0x13, "backlight" },
-	{ 0x14,	"select-color-preset" },
-	{ 0x16,	"red-video-gain" },
-	{ 0x18,	"green-video-gain" },
-	{ 0x1a,	"blue-video-gain" },
-	{ 0x1c, "hue" },
-	{ 0x1e,	"auto-size-center" },
-	{ 0x20,	"horizontal-position" },
-	{ 0x22,	"horizontal-size" },
-	{ 0x24,	"horizontal-pincushion" },
-	{ 0x26,	"horizontal-pincushion-balance" },
-	{ 0x28,	"horizontal-misconvergence" },
-	{ 0x2a,	"horizontal-linearity" },
-	{ 0x2c,	"horizontal-linearity-balance" },
-	{ 0x30,	"vertical-position" },
-	{ 0x32,	"vertical-size" },
-	{ 0x34,	"vertical-pincushion" },
-	{ 0x36,	"vertical-pincushion-balance" },
-	{ 0x38,	"vertical-misconvergence" },
-	{ 0x3a,	"vertical-linearity" },
-	{ 0x3c,	"vertical-linearity-balance" },
-	{ 0x3e,	"image-lock-fine" },
-	{ 0x40,	"parallelogram-distortion" },
-	{ 0x42,	"trapezoidal-distortion" },
-	{ 0x44, "tilt" },
-	{ 0x46,	"top-corner-distortion-control" },
-	{ 0x48,	"top-corner-distortion-balance" },
-	{ 0x4a,	"bottom-corner-distortion-control" },
-	{ 0x4c,	"bottom-corner-distortion-balance" },
-	{ 0x50,	"hue" },
-	{ 0x52,	"saturation" },
-	{ 0x54, "color-temp" },
-	{ 0x56,	"horizontal-moire" },
-	{ 0x58,	"vertical-moire" },
-	{ 0x5a, "auto-size" },
-	{ 0x5c,	"landing-adjust" },
-	{ 0x5e,	"input-level-select" },
-	{ 0x60,	"input-source-select" },
-	{ 0x62,	"audio-speaker-volume-adjust" },
-	{ 0x64,	"audio-microphone-volume-adjust" },
-	{ 0x66,	"on-screen-displa" },
-	{ 0x68,	"language-select" },
-	{ 0x6c,	"red-video-black-level" },
-	{ 0x6e,	"green-video-black-level" },
-	{ 0x70,	"blue-video-black-level" },
-	{ 0x8c, "sharpness" },
-	{ 0x94, "mute" },
-	{ 0xa2,	"auto-size-center" },
-	{ 0xa4,	"polarity-horizontal-synchronization" },
-	{ 0xa6,	"polarity-vertical-synchronization" },
-	{ 0xa8,	"synchronization-type" },
-	{ 0xaa,	"screen-orientation" },
-	{ 0xac,	"horizontal-frequency" },
-	{ 0xae,	"vertical-frequency" },
-	{ 0xb0,	"settings" },
-	{ 0xca,	"on-screen-display" },
-	{ 0xcc,	"samsung-on-screen-display-language" },
-	{ 0xc9,	"firmware-version" },
-	{ 0xd4,	"stereo-mode" },
-	{ 0xd6,	"dpms-control-(1---on/4---stby)" },
-	{ 0xdc,	"magicbright-(1---text/2---internet/3---entertain/4---custom)" },
-	{ 0xdf,	"vcp-version" },
-	{ 0xe0,	"samsung-color-preset-(0---normal/1---warm/2---cool)" },
-	{ 0xe1,	"power-control-(0---off/1---on)" },
-	{ 0xe2, "auto-source" },
-	{ 0xe8, "tl-purity" },
-	{ 0xe9, "tr-purity" },
-	{ 0xea, "bl-purity" },
-	{ 0xeb, "br-purity" },
-	{ 0xed,	"samsung-red-video-black-level" },
-	{ 0xee,	"samsung-green-video-black-level" },
-	{ 0xef,	"samsung-blue-video-black-level" },
-	{ 0xf0, "magic-color" },
-	{ 0xf1, "fe-brightness" },
-	{ 0xf2, "fe-clarity / gamma" },
-	{ 0xf3, "fe-color" },
-	{ 0xf5, "samsung-osd" },
-	{ 0xf6, "resolutionnotifier" },
-	{ 0xf9, "super-bright" },
-	{ 0xfc, "fe-mode" },
-	{ 0xfd, "power-led" },
-	{ 0xff, NULL }};
+#define LIBDDC_VCP_SET_DELAY_USECS   		50000
 
 /**
  * libddc_control_get_description:
@@ -173,27 +68,21 @@ static const LibddcDescription vcp_descriptions[] = {
 const gchar *
 libddc_control_get_description (LibddcControl *control)
 {
-	guint i;
-
 	g_return_val_if_fail (LIBDDC_IS_CONTROL(control), NULL);
 
-	for (i=0;;i++) {
-		if (vcp_descriptions[i].index == control->priv->id ||
-		    vcp_descriptions[i].index == 0xff)
-			break;
-	}
-	return vcp_descriptions[i].shortname;
+	return libddc_get_vcp_description_from_index (control->priv->id);
 }
 
 /**
  * libddc_control_is_value_valid:
  **/
 static gboolean
-libddc_control_is_value_valid (LibddcControl *control, guint16 value)
+libddc_control_is_value_valid (LibddcControl *control, guint16 value, GError **error)
 {
 	guint i;
 	gboolean ret = TRUE;
 	GArray *array;
+	GString *possible;
 
 	/* no data */
 	array = control->priv->values;
@@ -205,6 +94,17 @@ libddc_control_is_value_valid (LibddcControl *control, guint16 value)
 		ret = (g_array_index (array, guint16, i) == value);
 		if (ret)
 			goto out;
+	}
+
+	/* not found */
+	if (!ret) {
+		possible = g_string_new ("");
+		for (i=0; i<array->len; i++)
+			g_string_append_printf (possible, "%i ", g_array_index (array, guint16, i));
+		g_set_error (error, LIBDDC_CONTROL_ERROR, LIBDDC_CONTROL_ERROR_FAILED,
+			     "%i is not an allowed value for 0x%02x, possible values include %s",
+			     value, control->priv->id, possible->str);
+		g_string_free (possible, TRUE);
 	}
 out:
 	return ret;
@@ -225,12 +125,9 @@ libddc_control_set (LibddcControl *control, guint16 value, GError **error)
 	g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
 
 	/* check this value is allowed */
-	ret = libddc_control_is_value_valid (control, value);
-	if (!ret) {
-		g_set_error (error, LIBDDC_CONTROL_ERROR, LIBDDC_CONTROL_ERROR_FAILED,
-			     "%i is not an allowed value for 0x%02x", value, control->priv->id);
+	ret = libddc_control_is_value_valid (control, value, error);
+	if (!ret)
 		goto out;
-	}
 
 	buf[0] = LIBDDC_VCP_SET;
 	buf[1] = control->priv->id;
